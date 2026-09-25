@@ -10,12 +10,24 @@ internal sealed class PublicServer : IDisposable
 {
     private sealed class MainThreadCall
     {
+        private int state;
+
         public Func<object> Work { get; init; } = null!;
         public TaskCompletionSource<object> Completion { get; init; } = null!;
+
+        public bool TryBegin()
+            => Interlocked.CompareExchange(ref this.state, 1, 0) == 0;
+
+        public void CancelIfQueued()
+        {
+            if (Interlocked.CompareExchange(ref this.state, 2, 0) == 0)
+                this.Completion.TrySetCanceled();
+        }
     }
 
     private readonly HttpListener listener = new();
     private readonly CancellationTokenSource stop = new();
+    private readonly ConcurrentQueue<MainThreadCall> controlThreadCalls = new();
     private readonly ConcurrentQueue<MainThreadCall> mainThreadCalls = new();
     private readonly IMonitor monitor;
     private readonly string token;
@@ -33,7 +45,7 @@ internal sealed class PublicServer : IDisposable
         this.projector = projector;
         this.operations = operations;
         this.monitor = monitor;
-        this.listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        this.listener.Prefixes.Add("http://127.0.0.1:" + port + "/");
     }
 
     public void Start()
@@ -45,10 +57,29 @@ internal sealed class PublicServer : IDisposable
     public void Tick(ulong tick)
     {
         this.currentTick = tick;
-        while (this.mainThreadCalls.TryDequeue(out var call))
+
+        // Control-plane calls must not sit behind ordinary observe/submit traffic.
+        DrainQueue(this.controlThreadCalls, int.MaxValue);
+        DrainQueue(this.mainThreadCalls, 32);
+    }
+
+    private static void DrainQueue(ConcurrentQueue<MainThreadCall> queue, int maxCalls)
+    {
+        var handled = 0;
+        while (handled < maxCalls && queue.TryDequeue(out var call))
         {
-            try { call.Completion.TrySetResult(call.Work()); }
-            catch (Exception ex) { call.Completion.TrySetException(ex); }
+            handled++;
+            if (!call.TryBegin())
+                continue;
+
+            try
+            {
+                call.Completion.TrySetResult(call.Work());
+            }
+            catch (Exception ex)
+            {
+                call.Completion.TrySetException(ex);
+            }
         }
     }
 
@@ -66,7 +97,7 @@ internal sealed class PublicServer : IDisposable
             catch (ObjectDisposedException) when (this.stop.IsCancellationRequested) { }
             catch (Exception ex)
             {
-                this.monitor.Log($"Bridge listener error: {ex}", LogLevel.Error);
+                this.monitor.Log("Bridge listener error: " + ex, LogLevel.Error);
                 if (context is not null)
                     context.Response.Close();
             }
@@ -99,7 +130,7 @@ internal sealed class PublicServer : IDisposable
 
             if (ctx.Request.HttpMethod == "GET" && path == "/observe")
             {
-                var result = await OnMainThread(() => (object)this.projector.Project());
+                var result = await OnMainThread(() => (object)this.projector.Project(), controlPriority: false);
                 await WriteJson(ctx, 200, result);
                 return;
             }
@@ -110,7 +141,7 @@ internal sealed class PublicServer : IDisposable
                 var body = await reader.ReadToEndAsync();
                 var request = JsonSerializer.Deserialize<OperationRequest>(body, this.json)
                               ?? throw new InvalidDataException("Invalid OperationRequest");
-                var result = await OnMainThread(() => (object)this.operations.Submit(request, this.currentTick));
+                var result = await OnMainThread(() => (object)this.operations.Submit(request, this.currentTick), controlPriority: false);
                 await WriteJson(ctx, 202, result);
                 return;
             }
@@ -121,7 +152,7 @@ internal sealed class PublicServer : IDisposable
                 var body = await reader.ReadToEndAsync();
                 var request = JsonSerializer.Deserialize<ControlRequest>(body, this.json)
                               ?? throw new InvalidDataException("Invalid ControlRequest");
-                var result = await OnMainThread(() => (object)this.operations.ApplyControl(request, this.currentTick));
+                var result = await OnMainThread(() => (object)this.operations.ApplyControl(request, this.currentTick), controlPriority: true);
                 await WriteJson(ctx, 200, result);
                 return;
             }
@@ -150,18 +181,46 @@ internal sealed class PublicServer : IDisposable
         {
             await WriteJson(ctx, 503, new { error = "MAIN_THREAD_TIMEOUT" });
         }
+        catch (InvalidDataException ex) when (string.Equals(ex.Message, "OPERATION_ID_SEMANTIC_MISMATCH", StringComparison.Ordinal))
+        {
+            await WriteJson(ctx, 409, new { error = ex.Message });
+        }
+        catch (InvalidDataException ex)
+        {
+            await WriteJson(ctx, 400, new { error = "INVALID_REQUEST", detail = ex.Message });
+        }
+        catch (JsonException ex)
+        {
+            await WriteJson(ctx, 400, new { error = "INVALID_JSON", detail = ex.Message });
+        }
         catch (Exception ex)
         {
-            this.monitor.Log($"Request failed: {ex}", LogLevel.Error);
+            this.monitor.Log("Request failed: " + ex, LogLevel.Error);
             await WriteJson(ctx, 500, new { error = "INTERNAL_ERROR", detail = ex.Message });
         }
     }
 
-    private async Task<object> OnMainThread(Func<object> work)
+    private async Task<object> OnMainThread(Func<object> work, bool controlPriority)
     {
         var tcs = new TaskCompletionSource<object>(TaskCreationOptions.RunContinuationsAsynchronously);
-        this.mainThreadCalls.Enqueue(new MainThreadCall { Work = work, Completion = tcs });
-        return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        var call = new MainThreadCall { Work = work, Completion = tcs };
+
+        if (controlPriority)
+            this.controlThreadCalls.Enqueue(call);
+        else
+            this.mainThreadCalls.Enqueue(call);
+
+        try
+        {
+            return await tcs.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        }
+        catch (TimeoutException)
+        {
+            // If the main thread has not started this call yet, prevent it from
+            // executing after the HTTP caller has already observed a timeout.
+            call.CancelIfQueued();
+            throw;
+        }
     }
 
     private async Task WriteJson(HttpListenerContext ctx, int status, object payload)

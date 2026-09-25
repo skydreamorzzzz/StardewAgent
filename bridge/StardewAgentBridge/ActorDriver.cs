@@ -5,7 +5,6 @@ namespace StardewAgentBridge;
 internal sealed class ActorDriver
 {
     private readonly IModHelper helper;
-    private SButton? movementButton;
 
     public ActorDriver(IModHelper helper)
     {
@@ -19,14 +18,8 @@ internal sealed class ActorDriver
 
     public void PressMovement(SButton button)
     {
+        // SMAPI Press injects input for the current update tick only. A bounded
+        // movement stops by ceasing future Press calls; there is no held key to release.
         this.helper.Input.Press(button);
-        this.movementButton = button;
-    }
-
-    public void StopMovement()
-    {
-        // SMAPI Press injects one tick at a time; clearing this marker guarantees
-        // the controller will not inject another movement input after stopping.
-        this.movementButton = null;
     }
 }

@@ -85,9 +85,13 @@ class SmapiAdapter:
             raw=raw,
         )
 
-    def submit_operation(self, action_id: str, args: dict[str, Any] | None = None) -> OperationView:
+    def submit_operation(
+        self,
+        operation_id: str,
+        action_id: str,
+        args: dict[str, Any] | None = None,
+    ) -> OperationView:
         self.health()
-        operation_id = str(uuid.uuid4())
         raw = self._request(
             "POST",
             "/operation",
@@ -102,7 +106,7 @@ class SmapiAdapter:
         return self._to_operation(raw)
 
     def submit_primitive(self, action_id: str) -> OperationView:
-        return self.submit_operation(action_id)
+        return self.submit_operation(str(uuid.uuid4()), action_id)
 
     def status(self, operation_id: str) -> OperationView:
         raw = self._request("GET", f"/operation/{operation_id}")
@@ -119,7 +123,13 @@ class SmapiAdapter:
         self.health()
         return self._control("enable", new_control_epoch=self.control_epoch)
 
-    def _control(self, kind: str, *, operation_id: str | None = None, new_control_epoch: int | None = None) -> ControlView:
+    def _control(
+        self,
+        kind: str,
+        *,
+        operation_id: str | None = None,
+        new_control_epoch: int | None = None,
+    ) -> ControlView:
         payload: dict[str, Any] = {
             "control_id": str(uuid.uuid4()),
             "kind": kind,

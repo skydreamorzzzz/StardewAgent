@@ -12,7 +12,12 @@ class GameAdapter(Protocol):
 
     def observe(self) -> Observation: ...
 
-    def submit_operation(self, action_id: str, args: dict[str, Any] | None = None) -> OperationView: ...
+    def submit_operation(
+        self,
+        operation_id: str,
+        action_id: str,
+        args: dict[str, Any] | None = None,
+    ) -> OperationView: ...
 
     def status(self, operation_id: str) -> OperationView: ...
 

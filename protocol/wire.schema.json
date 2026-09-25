@@ -11,8 +11,66 @@
         "operation_id": {"type": "string", "format": "uuid"},
         "actor_id": {"type": "string"},
         "action_id": {"type": "string"},
+        "args": {"type": "object"},
+        "control_epoch": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "OperationView": {
+      "type": "object",
+      "required": [
+        "operation_id", "action_id", "status", "outcome", "error",
+        "submitted_tick", "settled_tick", "effect_status", "quiescent",
+        "start_tile_x", "start_tile_y", "end_tile_x", "end_tile_y",
+        "ticks_used", "elapsed_ms", "postcondition"
+      ],
+      "properties": {
+        "operation_id": {"type": "string", "format": "uuid"},
+        "action_id": {"type": "string"},
+        "status": {"type": "string"},
+        "outcome": {"type": ["string", "null"]},
+        "error": {"type": ["string", "null"]},
+        "submitted_tick": {"type": ["integer", "null"], "minimum": 0},
+        "settled_tick": {"type": ["integer", "null"], "minimum": 0},
+        "effect_status": {"type": ["string", "null"]},
+        "quiescent": {"type": ["boolean", "null"]},
+        "start_tile_x": {"type": ["integer", "null"]},
+        "start_tile_y": {"type": ["integer", "null"]},
+        "end_tile_x": {"type": ["integer", "null"]},
+        "end_tile_y": {"type": ["integer", "null"]},
+        "ticks_used": {"type": ["integer", "null"], "minimum": 0},
+        "elapsed_ms": {"type": ["integer", "null"], "minimum": 0},
+        "postcondition": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    },
+    "ControlRequest": {
+      "type": "object",
+      "required": ["control_id", "kind"],
+      "properties": {
+        "control_id": {"type": "string", "format": "uuid"},
+        "kind": {"enum": ["pause", "cancel_operation", "enable", "heartbeat"]},
+        "operation_id": {"type": ["string", "null"], "format": "uuid"},
+        "new_control_epoch": {"type": ["integer", "null"], "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "ControlView": {
+      "type": "object",
+      "required": [
+        "control_id", "kind", "control_epoch", "dispatch_enabled",
+        "quiescent", "affected_operation_ids"
+      ],
+      "properties": {
+        "control_id": {"type": "string", "format": "uuid"},
+        "kind": {"type": "string"},
         "control_epoch": {"type": "integer", "minimum": 0},
-        "args": {"type": "object"}
+        "dispatch_enabled": {"type": "boolean"},
+        "quiescent": {"type": ["boolean", "null"]},
+        "affected_operation_ids": {
+          "type": "array",
+          "items": {"type": "string", "format": "uuid"}
+        }
       },
       "additionalProperties": false
     }

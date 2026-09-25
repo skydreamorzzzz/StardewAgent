@@ -13,21 +13,30 @@ def test_default_actor_is_single_agent():
 class FakeAdapter:
     def __init__(self) -> None:
         self.submitted_action = None
+        self.submitted_operation_id = None
+        self.cancelled = None
 
-    def submit_operation(self, action_id: str, args=None) -> OperationView:
+    def submit_operation(self, operation_id: str, action_id: str, args=None) -> OperationView:
+        self.submitted_operation_id = operation_id
         self.submitted_action = action_id
-        return _operation("accepted")
+        return _operation("accepted", operation_id=operation_id, action_id=action_id)
 
     def status(self, operation_id: str) -> OperationView:
-        return _operation("settled", outcome="succeeded")
+        return _operation("settled", outcome="succeeded", operation_id=operation_id)
 
     def cancel(self, operation_id: str):
         self.cancelled = operation_id
         return None
 
 
-def _operation(status: str, outcome: str | None = None) -> OperationView:
-    return OperationView("operation-1", "input.move_left", status, outcome, None, 1, 2, {})
+def _operation(
+    status: str,
+    outcome: str | None = None,
+    *,
+    operation_id: str = "operation-1",
+    action_id: str = "input.move_left",
+) -> OperationView:
+    return OperationView(operation_id, action_id, status, outcome, None, 1, 2, {})
 
 
 def test_primitive_uses_generic_executor_without_business_claims():
@@ -37,11 +46,12 @@ def test_primitive_uses_generic_executor_without_business_claims():
     assert adapter.submitted_action == "input.move_left"
     assert result.status == "settled"
     assert result.outcome == "succeeded"
+    assert result.operation_id == adapter.submitted_operation_id
 
 
 class HangingAdapter(FakeAdapter):
     def status(self, operation_id: str) -> OperationView:
-        return _operation("running")
+        return _operation("running", operation_id=operation_id)
 
 
 def test_executor_timeout_is_explicit_unknown_and_requests_cancel():
@@ -53,6 +63,29 @@ def test_executor_timeout_is_explicit_unknown_and_requests_cancel():
     assert result.error == "EXECUTOR_TIMEOUT"
     assert result.quiescent is None
     assert adapter.cancelled == "operation-1"
+
+
+class LostSubmitAckAdapter(FakeAdapter):
+    def submit_operation(self, operation_id: str, action_id: str, args=None) -> OperationView:
+        self.submitted_operation_id = operation_id
+        self.submitted_action = action_id
+        raise RuntimeError("ack lost")
+
+    def status(self, operation_id: str) -> OperationView:
+        return _operation(
+            "settled",
+            outcome="succeeded",
+            operation_id=operation_id,
+            action_id=self.submitted_action or "",
+        )
+
+
+def test_lost_submit_ack_reconciles_the_same_operation_id():
+    adapter = LostSubmitAckAdapter()
+    result = OperationExecutor(adapter, timeout_s=0.1, poll_s=0).execute("movement.bounded", {"direction": "left"})
+
+    assert result.status == "settled"
+    assert result.operation_id == adapter.submitted_operation_id
 
 
 @pytest.mark.parametrize("direction", ["up", "down", "left", "right"])
