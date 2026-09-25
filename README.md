@@ -18,7 +18,7 @@ The design target is [Architecture Specification v1.1](docs/architecture-v1.1.md
 
 ```text
 bridge/StardewAgentBridge/   C# SMAPI lifecycle, public server, observation, operations, input driver
-protocol/                    current cross-language wire and action schemas
+protocol/                    dynamic tool discovery, catalog, admission, and invocation schemas
 src/sdv_agent/harness/       GameAdapter, SMAPI transport, operation executor, wire-facing models
 src/sdv_agent/games/stardew/ verified primitive definitions
 tests/                       current Python boundary tests

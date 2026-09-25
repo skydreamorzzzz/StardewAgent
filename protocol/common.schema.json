@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stardew-agent.local/protocol/common.schema.json",
+  "title": "Stardew Agent Tool Protocol Common Types",
+  "$defs": {
+    "Identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]*$"
+    },
+    "Version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "Sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "JsonValue": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "number"},
+        {"type": "string"},
+        {
+          "type": "array",
+          "items": {"$ref": "#/$defs/JsonValue"}
+        },
+        {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/JsonValue"}
+        }
+      ]
+    },
+    "JsonSchemaContract": {
+      "type": "object",
+      "required": ["$schema"],
+      "properties": {
+        "$schema": {
+          "const": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "$id": {"type": "string", "format": "uri-reference"}
+      },
+      "additionalProperties": true
+    },
+    "ProviderReference": {
+      "type": "object",
+      "required": ["id", "version", "routing_key"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Identifier"},
+        "version": {"$ref": "#/$defs/Version"},
+        "routing_key": {"$ref": "#/$defs/Identifier"}
+      },
+      "additionalProperties": false
+    },
+    "ToolReference": {
+      "type": "object",
+      "required": ["id", "version", "definition_hash"],
+      "properties": {
+        "id": {"$ref": "#/$defs/Identifier"},
+        "version": {"$ref": "#/$defs/Version"},
+        "definition_hash": {"$ref": "#/$defs/Sha256Digest"}
+      },
+      "additionalProperties": false
+    },
+    "CatalogReference": {
+      "type": "object",
+      "required": ["snapshot_id", "snapshot_hash", "registry_revision"],
+      "properties": {
+        "snapshot_id": {"type": "string", "format": "uuid"},
+        "snapshot_hash": {"$ref": "#/$defs/Sha256Digest"},
+        "registry_revision": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "ExecutionBounds": {
+      "type": "object",
+      "required": ["max_duration_ms", "max_attempts", "cancellable"],
+      "properties": {
+        "max_duration_ms": {"type": "integer", "minimum": 1},
+        "max_attempts": {"type": "integer", "minimum": 1},
+        "cancellable": {"type": "boolean"},
+        "max_output_bytes": {"type": "integer", "minimum": 0},
+        "budgets": {
+          "type": "object",
+          "propertyNames": {"$ref": "#/$defs/Identifier"},
+          "additionalProperties": {"type": "number", "minimum": 0}
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

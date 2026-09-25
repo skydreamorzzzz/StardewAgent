@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stardew-agent.local/protocol/tool-catalog-snapshot.schema.json",
+  "title": "Stardew Agent Immutable Tool Catalog Snapshot",
+  "$ref": "#/$defs/ToolCatalogSnapshot",
+  "$defs": {
+    "CatalogEntry": {
+      "type": "object",
+      "required": ["tool_ref", "definition", "resolution"],
+      "properties": {
+        "tool_ref": {
+          "$ref": "common.schema.json#/$defs/ToolReference"
+        },
+        "definition": {
+          "$ref": "tool-definition.schema.json#/$defs/ToolDefinition"
+        },
+        "resolution": {
+          "type": "object",
+          "required": ["available_at_resolution", "llm_visible", "resolved_at"],
+          "properties": {
+            "available_at_resolution": {"const": true},
+            "llm_visible": {"const": true},
+            "resolved_at": {"type": "string", "format": "date-time"},
+            "reason_codes": {
+              "type": "array",
+              "items": {"$ref": "common.schema.json#/$defs/Identifier"},
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "ToolCatalogSnapshot": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "snapshot_id",
+        "snapshot_hash",
+        "registry_revision",
+        "created_at",
+        "resolution_context",
+        "tools"
+      ],
+      "properties": {
+        "protocol_version": {"type": "string", "minLength": 1},
+        "snapshot_id": {"type": "string", "format": "uuid"},
+        "snapshot_hash": {
+          "$ref": "common.schema.json#/$defs/Sha256Digest"
+        },
+        "registry_revision": {"type": "string", "minLength": 1},
+        "created_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "resolution_context": {
+          "type": "object",
+          "required": ["audience", "principal_id", "context_hash"],
+          "properties": {
+            "audience": {"$ref": "common.schema.json#/$defs/Identifier"},
+            "principal_id": {"$ref": "common.schema.json#/$defs/Identifier"},
+            "actor_id": {"$ref": "common.schema.json#/$defs/Identifier"},
+            "world_scope_ref": {"type": "string", "minLength": 1},
+            "context_hash": {"$ref": "common.schema.json#/$defs/Sha256Digest"}
+          },
+          "additionalProperties": false
+        },
+        "tools": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/CatalogEntry"}
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

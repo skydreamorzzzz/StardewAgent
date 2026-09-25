@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stardew-agent.local/protocol/invocation.schema.json",
+  "title": "Stardew Agent Generic Tool Invocation Protocol",
+  "oneOf": [
+    {"$ref": "#/$defs/InvocationRequest"},
+    {"$ref": "#/$defs/AdmissionDecision"},
+    {"$ref": "#/$defs/InvocationResult"},
+    {"$ref": "#/$defs/InvocationControl"}
+  ],
+  "$defs": {
+    "PrincipalReference": {
+      "type": "object",
+      "required": ["id", "permission_context_ref"],
+      "properties": {
+        "id": {"$ref": "common.schema.json#/$defs/Identifier"},
+        "actor_id": {"$ref": "common.schema.json#/$defs/Identifier"},
+        "permission_context_ref": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "InvocationRequest": {
+      "type": "object",
+      "required": [
+        "message_type",
+        "protocol_version",
+        "invocation_id",
+        "operation_id",
+        "tool_ref",
+        "catalog_ref",
+        "principal",
+        "arguments",
+        "requested_bounds",
+        "submitted_at"
+      ],
+      "properties": {
+        "message_type": {"const": "tool.invoke"},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "invocation_id": {"type": "string", "format": "uuid"},
+        "operation_id": {"type": "string", "format": "uuid"},
+        "tool_ref": {"$ref": "common.schema.json#/$defs/ToolReference"},
+        "catalog_ref": {"$ref": "common.schema.json#/$defs/CatalogReference"},
+        "principal": {"$ref": "#/$defs/PrincipalReference"},
+        "arguments": {"type": "object"},
+        "requested_bounds": {
+          "$ref": "common.schema.json#/$defs/ExecutionBounds"
+        },
+        "context_hints": {
+          "type": "object",
+          "properties": {
+            "world_scope_ref": {"type": "string", "minLength": 1},
+            "budget_ref": {"type": "string", "minLength": 1},
+            "cancellation_epoch": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "submitted_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "DecisionCheck": {
+      "type": "object",
+      "required": ["status", "code"],
+      "properties": {
+        "status": {"enum": ["pass", "fail", "unknown"]},
+        "code": {"$ref": "common.schema.json#/$defs/Identifier"},
+        "detail": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "FreshAdmissionChecks": {
+      "type": "object",
+      "required": [
+        "tool_exists",
+        "definition_matches",
+        "input_valid",
+        "permissions_allowed",
+        "preconditions_satisfied",
+        "budget_allowed",
+        "side_effects_allowed",
+        "cancellation_allowed"
+      ],
+      "properties": {
+        "tool_exists": {"$ref": "#/$defs/DecisionCheck"},
+        "definition_matches": {"$ref": "#/$defs/DecisionCheck"},
+        "input_valid": {"$ref": "#/$defs/DecisionCheck"},
+        "permissions_allowed": {"$ref": "#/$defs/DecisionCheck"},
+        "preconditions_satisfied": {"$ref": "#/$defs/DecisionCheck"},
+        "budget_allowed": {"$ref": "#/$defs/DecisionCheck"},
+        "side_effects_allowed": {"$ref": "#/$defs/DecisionCheck"},
+        "cancellation_allowed": {"$ref": "#/$defs/DecisionCheck"}
+      },
+      "additionalProperties": false
+    },
+    "AdmissionDecision": {
+      "type": "object",
+      "required": [
+        "message_type",
+        "protocol_version",
+        "invocation_id",
+        "admission_id",
+        "tool_ref",
+        "registry_revision",
+        "decision",
+        "checks",
+        "evaluated_at"
+      ],
+      "properties": {
+        "message_type": {"const": "tool.admission"},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "invocation_id": {"type": "string", "format": "uuid"},
+        "admission_id": {"type": "string", "format": "uuid"},
+        "tool_ref": {"$ref": "common.schema.json#/$defs/ToolReference"},
+        "registry_revision": {"type": "string", "minLength": 1},
+        "decision": {"enum": ["admitted", "rejected"]},
+        "checks": {"$ref": "#/$defs/FreshAdmissionChecks"},
+        "effective_bounds": {
+          "$ref": "common.schema.json#/$defs/ExecutionBounds"
+        },
+        "evaluated_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "InvocationResult": {
+      "type": "object",
+      "required": [
+        "message_type",
+        "protocol_version",
+        "invocation_id",
+        "operation_id",
+        "tool_ref",
+        "result_revision",
+        "phase",
+        "effect_status",
+        "quiescent",
+        "reported_at"
+      ],
+      "properties": {
+        "message_type": {"const": "tool.result"},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "invocation_id": {"type": "string", "format": "uuid"},
+        "operation_id": {"type": "string", "format": "uuid"},
+        "tool_ref": {"$ref": "common.schema.json#/$defs/ToolReference"},
+        "result_revision": {"type": "integer", "minimum": 0},
+        "phase": {
+          "enum": ["accepted", "running", "cancel_requested", "settled", "unknown"]
+        },
+        "outcome": {
+          "enum": ["succeeded", "partial", "failed", "cancelled", "rejected", "unknown"]
+        },
+        "effect_status": {"enum": ["none", "some", "all", "unknown"]},
+        "quiescent": {"oneOf": [{"type": "boolean"}, {"const": "unknown"}]},
+        "output": {"$ref": "common.schema.json#/$defs/JsonValue"},
+        "error": {
+          "type": "object",
+          "required": ["code"],
+          "properties": {
+            "code": {"$ref": "common.schema.json#/$defs/Identifier"},
+            "message": {"type": "string"},
+            "retryable": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "reported_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    },
+    "InvocationControl": {
+      "type": "object",
+      "required": ["message_type", "protocol_version", "control_id", "invocation_id", "requested_at"],
+      "properties": {
+        "message_type": {"const": "tool.cancel"},
+        "protocol_version": {"type": "string", "minLength": 1},
+        "control_id": {"type": "string", "format": "uuid"},
+        "invocation_id": {"type": "string", "format": "uuid"},
+        "reason": {"type": "string"},
+        "requested_at": {"type": "string", "format": "date-time"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

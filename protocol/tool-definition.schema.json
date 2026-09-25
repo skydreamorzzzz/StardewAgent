@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stardew-agent.local/protocol/tool-definition.schema.json",
+  "title": "Stardew Agent Tool Definition",
+  "$ref": "#/$defs/ToolDefinitionEnvelope",
+  "$defs": {
+    "ToolDefinitionEnvelope": {
+      "type": "object",
+      "required": ["definition_hash", "definition"],
+      "properties": {
+        "definition_hash": {
+          "$ref": "common.schema.json#/$defs/Sha256Digest"
+        },
+        "definition": {"$ref": "#/$defs/ToolDefinition"}
+      },
+      "additionalProperties": false
+    },
+    "ToolDefinition": {
+      "type": "object",
+      "required": [
+        "id",
+        "version",
+        "description",
+        "input_contract",
+        "output_contract",
+        "provider",
+        "exposure",
+        "permissions",
+        "side_effects",
+        "execution_bounds",
+        "preconditions"
+      ],
+      "properties": {
+        "id": {"$ref": "common.schema.json#/$defs/Identifier"},
+        "version": {"$ref": "common.schema.json#/$defs/Version"},
+        "description": {"type": "string", "minLength": 1},
+        "input_contract": {
+          "$ref": "common.schema.json#/$defs/JsonSchemaContract"
+        },
+        "output_contract": {
+          "$ref": "common.schema.json#/$defs/JsonSchemaContract"
+        },
+        "provider": {
+          "$ref": "common.schema.json#/$defs/ProviderReference"
+        },
+        "exposure": {
+          "type": "object",
+          "required": ["catalog_eligible", "audiences"],
+          "properties": {
+            "catalog_eligible": {"type": "boolean"},
+            "audiences": {
+              "type": "array",
+              "items": {"$ref": "common.schema.json#/$defs/Identifier"},
+              "uniqueItems": true
+            },
+            "summary": {"type": "string"}
+          },
+          "additionalProperties": false
+        },
+        "permissions": {
+          "type": "object",
+          "required": ["all_of", "any_of"],
+          "properties": {
+            "all_of": {
+              "type": "array",
+              "items": {"$ref": "common.schema.json#/$defs/Identifier"},
+              "uniqueItems": true
+            },
+            "any_of": {
+              "type": "array",
+              "items": {"$ref": "common.schema.json#/$defs/Identifier"},
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        },
+        "side_effects": {
+          "type": "object",
+          "required": ["classification", "kinds", "requires_confirmation"],
+          "properties": {
+            "classification": {
+              "enum": ["none", "reversible", "irreversible", "mixed", "unknown"]
+            },
+            "kinds": {
+              "type": "array",
+              "items": {"$ref": "common.schema.json#/$defs/Identifier"},
+              "uniqueItems": true
+            },
+            "requires_confirmation": {"type": "boolean"}
+          },
+          "additionalProperties": false
+        },
+        "execution_bounds": {
+          "$ref": "common.schema.json#/$defs/ExecutionBounds"
+        },
+        "preconditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "description"],
+            "properties": {
+              "kind": {"$ref": "common.schema.json#/$defs/Identifier"},
+              "description": {"type": "string", "minLength": 1},
+              "parameters": {"type": "object"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "extensions": {
+          "type": "object",
+          "propertyNames": {"$ref": "common.schema.json#/$defs/Identifier"},
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.stardew-agent.local/protocol/provider-manifest.schema.json",
+  "title": "Stardew Agent Provider Manifest",
+  "$ref": "#/$defs/ProviderManifest",
+  "$defs": {
+    "ProviderManifest": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "manifest_id",
+        "manifest_revision",
+        "generated_at",
+        "provider",
+        "tools"
+      ],
+      "properties": {
+        "protocol_version": {"type": "string", "minLength": 1},
+        "manifest_id": {"type": "string", "format": "uuid"},
+        "manifest_revision": {"type": "string", "minLength": 1},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "provider": {
+          "$ref": "common.schema.json#/$defs/ProviderReference"
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "$ref": "tool-definition.schema.json#/$defs/ToolDefinitionEnvelope"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

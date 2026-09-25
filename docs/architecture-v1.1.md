@@ -4,6 +4,12 @@
 
 状态：编码前架构基线；尚未进行真实游戏集成验证。本文中的接口和类型是规格，不是已实现代码。
 
+> Protocol update: the normative tool discovery and invocation contracts now
+> live in `protocol/README.md` and its referenced schemas. They supersede this
+> document's older `wire.schema.json` / `actions.schema.json`, central action
+> manifest, and bare `action_id` sketches. Runtime migration is intentionally a
+> separate implementation task.
+
 ## Change Log
 
 本次以《Architecture Specification v1》为基线，新的用户决策优先于 v1、checkpoint 和原始讨论。保留 Agent Core + Stardew 领域能力 + Harness/SMAPI Bridge 的总体分区，调整能力组合与产品范围，不另造一套架构。本文可独立用于实现，无须从 v1 拼接缺失章节。
