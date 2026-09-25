@@ -125,10 +125,10 @@ internal sealed class OperationHost
     {
         if (this.activeMovement is not null && this.activeOperationId is Guid activeId)
         {
-            var record = this.records[activeId];
+            var activeRecord = this.records[activeId];
             int operationEpoch;
-            lock (record.Gate)
-                operationEpoch = record.Request.ControlEpoch ?? this.controlEpoch;
+            lock (activeRecord.Gate)
+                operationEpoch = activeRecord.Request.ControlEpoch ?? this.controlEpoch;
 
             var result = this.activeMovement.Tick(
                 this.dispatchEnabled,
@@ -136,7 +136,7 @@ internal sealed class OperationHost
                 operationEpoch);
             if (result is not null)
             {
-                ApplyMovementResult(record, result, tick);
+                ApplyMovementResult(activeRecord, result, tick);
                 this.activeMovement = null;
                 this.activeOperationId = null;
             }
