@@ -86,7 +86,14 @@ internal sealed class PublicServer : IDisposable
             var path = ctx.Request.Url?.AbsolutePath ?? "/";
             if (ctx.Request.HttpMethod == "GET" && path == "/health")
             {
-                await WriteJson(ctx, 200, new { ok = true, actor_id = this.actorId, tick = this.currentTick });
+                await WriteJson(ctx, 200, new
+                {
+                    ok = true,
+                    actor_id = this.actorId,
+                    tick = this.currentTick,
+                    control_epoch = this.operations.ControlEpoch,
+                    dispatch_enabled = this.operations.DispatchEnabled,
+                });
                 return;
             }
 
@@ -105,6 +112,17 @@ internal sealed class PublicServer : IDisposable
                               ?? throw new InvalidDataException("Invalid OperationRequest");
                 var result = await OnMainThread(() => (object)this.operations.Submit(request, this.currentTick));
                 await WriteJson(ctx, 202, result);
+                return;
+            }
+
+            if (ctx.Request.HttpMethod == "POST" && path == "/control")
+            {
+                using var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding ?? Encoding.UTF8);
+                var body = await reader.ReadToEndAsync();
+                var request = JsonSerializer.Deserialize<ControlRequest>(body, this.json)
+                              ?? throw new InvalidDataException("Invalid ControlRequest");
+                var result = await OnMainThread(() => (object)this.operations.ApplyControl(request, this.currentTick));
+                await WriteJson(ctx, 200, result);
                 return;
             }
 

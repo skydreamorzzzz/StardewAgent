@@ -7,7 +7,7 @@ StardewAgent currently contains the first verified vertical slice for one AI-con
 - a C# SMAPI Bridge loaded by Stardew Valley;
 - Python ↔ localhost ↔ Bridge communication;
 - structured, player-visible observations;
-- bounded primitive game input;
+- a bounded movement primitive executed locally by the Bridge tick loop;
 - actor-aware contracts currently bound to `agent_player`.
 
 The project does **not** yet implement an autonomous planner, long-term memory, RAG, high-level farming capabilities, autonomous mining/fishing, multiplayer, or multi-agent coordination.
@@ -62,18 +62,22 @@ sdv-smoke health
 sdv-smoke observe
 ```
 
-After loading a save, one low-risk primitive can be checked with:
+After loading a save, the Goal 1A bounded movement primitive can be checked with:
 
 ```powershell
-sdv-smoke move left
+sdv-smoke bounded-move left --max-ticks 12 --max-duration-ms 1000
 sdv-smoke observe
 ```
 
-A primitive result means that the bounded input was injected. It does not claim that movement succeeded or that a higher-level game objective was completed. Such claims require later postcondition-aware capabilities.
+`movement.bounded` submits one typed operation. Python does not send per-tick requests; the C# `MovementController` injects movement locally until the tick/duration bound, cancellation, pause fence, or watchdog limit is reached. Results include the start/end player tile, ticks used, elapsed time, quiescent state, effect status, and postcondition. If public observation cannot confirm displacement, the result remains `unknown` instead of claiming success.
+
+The older `sdv-smoke move <direction>` command remains a single input primitive for compatibility. It does not claim a movement effect.
 
 ## Information boundary
 
 `ObservationProjector` exposes a deliberately small player-visible view: date/time, current location, player tile/facing, health, stamina, money, current item/tool, menu state, and world readiness. It does not expose remote container contents, hidden map objects, global NPC coordinates, RNG, or hidden flags.
+
+Navigate, path planning, farming, fishing, mining, combat, Planner, Memory, and RAG are not implemented by Goal 1A.
 
 ## Known unverified behavior
 

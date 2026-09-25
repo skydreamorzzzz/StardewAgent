@@ -35,3 +35,23 @@ class OperationView:
     submitted_tick: int | None
     settled_tick: int | None
     raw: dict[str, Any]
+    effect_status: str | None = None
+    quiescent: bool | None = None
+    start_tile_x: int | None = None
+    start_tile_y: int | None = None
+    end_tile_x: int | None = None
+    end_tile_y: int | None = None
+    ticks_used: int | None = None
+    elapsed_ms: int | None = None
+    postcondition: str | None = None
+
+
+@dataclass(frozen=True)
+class ControlView:
+    control_id: str
+    kind: str
+    control_epoch: int
+    dispatch_enabled: bool
+    quiescent: bool | None
+    affected_operation_ids: list[str]
+    raw: dict[str, Any]

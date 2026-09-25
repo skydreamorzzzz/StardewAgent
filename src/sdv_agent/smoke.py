@@ -25,6 +25,10 @@ def main() -> None:
     sub.add_parser("observe")
     p_move = sub.add_parser("move")
     p_move.add_argument("direction", choices=["up", "right", "down", "left"])
+    p_bounded = sub.add_parser("bounded-move")
+    p_bounded.add_argument("direction", choices=["up", "right", "down", "left"])
+    p_bounded.add_argument("--max-ticks", type=int, default=12)
+    p_bounded.add_argument("--max-duration-ms", type=int, default=1000)
     sub.add_parser("interact")
     sub.add_parser("use-tool")
     p_status = sub.add_parser("status")
@@ -40,6 +44,8 @@ def main() -> None:
         dump(adapter.observe())
     elif args.cmd == "move":
         dump(tools.move_once(args.direction))
+    elif args.cmd == "bounded-move":
+        dump(tools.bounded_move(args.direction, max_ticks=args.max_ticks, max_duration_ms=args.max_duration_ms))
     elif args.cmd == "interact":
         dump(tools.interact())
     elif args.cmd == "use-tool":

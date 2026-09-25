@@ -6,11 +6,12 @@
   "$defs": {
     "OperationRequest": {
       "type": "object",
-      "required": ["operation_id", "actor_id", "action_id", "args"],
+      "required": ["operation_id", "actor_id", "action_id", "args", "control_epoch"],
       "properties": {
         "operation_id": {"type": "string", "format": "uuid"},
         "actor_id": {"type": "string"},
         "action_id": {"type": "string"},
+        "control_epoch": {"type": "integer", "minimum": 0},
         "args": {"type": "object"}
       },
       "additionalProperties": false

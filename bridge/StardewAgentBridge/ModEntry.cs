@@ -22,7 +22,7 @@ public sealed class ModEntry : Mod
         var projector = new ObservationProjector(config.ActorId);
         var driver = new ActorDriver(helper);
         var handlers = new ActionHandlers(driver);
-        this.operations = new OperationHost(config.ActorId, handlers);
+        this.operations = new OperationHost(config.ActorId, handlers, driver, projector);
         this.server = new PublicServer(config.Port, config.Token, config.ActorId, projector, this.operations, this.Monitor);
 
         helper.Events.GameLoop.UpdateTicking += this.OnUpdateTicking;
