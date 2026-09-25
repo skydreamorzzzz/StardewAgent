@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.stardew-agent/wire.schema.json",
+  "title": "Stardew Agent Bootstrap Wire Protocol",
+  "type": "object",
+  "$defs": {
+    "OperationRequest": {
+      "type": "object",
+      "required": ["operation_id", "actor_id", "action_id", "args"],
+      "properties": {
+        "operation_id": {"type": "string", "format": "uuid"},
+        "actor_id": {"type": "string"},
+        "action_id": {"type": "string"},
+        "args": {"type": "object"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

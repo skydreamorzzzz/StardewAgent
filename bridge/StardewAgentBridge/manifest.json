@@ -1,0 +1,9 @@
+{
+  "Name": "Stardew Agent Bridge",
+  "Author": "Stardew Agent Project",
+  "Version": "0.0.1",
+  "Description": "Local observation and bounded primitive input bridge for an AI-controlled player.",
+  "UniqueID": "StardewAgent.Bridge",
+  "EntryDll": "StardewAgentBridge.dll",
+  "MinimumApiVersion": "4.4.0"
+}

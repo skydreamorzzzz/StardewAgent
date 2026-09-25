@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.stardew-agent/actions.schema.json",
+  "title": "Bootstrap primitive action registry",
+  "type": "object",
+  "properties": {
+    "actions": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "input.move_up",
+          "input.move_right",
+          "input.move_down",
+          "input.move_left",
+          "input.action",
+          "input.use_tool"
+        ]
+      }
+    }
+  }
+}

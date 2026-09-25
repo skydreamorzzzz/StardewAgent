@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=70"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sdv-agent"
+version = "0.0.1"
+description = "Stardew Valley agent bootstrap: SMAPI observation + primitive operations"
+requires-python = ">=3.11"
+
+[project.scripts]
+sdv-smoke = "sdv_agent.smoke:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

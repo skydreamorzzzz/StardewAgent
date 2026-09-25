@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+
+# .NET and IDEs
+bin/
+obj/
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+
+# Runtime state and credentials
+.env
+.env.*
+*.sqlite
+*.sqlite3
+*.db
+*.log
+logs/
+traces/
+checkpoints/
+diagnostics/
+diagnostic-exports/
+cache/
+vector-index/
+bridge/StardewAgentBridge/config.json
+
+# Stardew Valley / SMAPI local data
+/Mods/
+/Saves/
+/save-backups/
+/smapi-internal/
+/Stardew Valley/
+
+# Local bootstrap and tool caches
+/.appdata/
+/.dotnet-home/
+/.dotnet-sdk/
+/.nuget/
+/dotnet-install.ps1
+/stardew-agent-bootstrap.zip
+/stardew-agent-bootstrap/
+
+# OS files
+.DS_Store
+Thumbs.db
